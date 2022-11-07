@@ -1,0 +1,40 @@
+name: ci
+on:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - 'master'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+        -
+          name: Checkout 
+          uses: actions/checkout@v3
+        -
+          if: github.event_name != 'pull_request'
+          uses: docker/login-action@v2
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+            username: ${{ secrets.DOCKER_HUB_USERNAME }}
+            password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        -
+          name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v2
+        -
+          name: Build and push
+          uses: docker/build-push-action@v3
+          with:
+            context: .
+            file: ./Dockerfile
+            push: true
+            tags: ${{ secrets.DOCKER_HUB_USERNAME }}/DOCKER_HUB_USERNAME:latest
+            cache-from: type=registry,ref=${{secrets.DOCKER_HUB_USERNAME}}/DOCKER_HUB_USERNAME:buildcache
+            cache-to: type=registry,ref=${{secrets.DOCKER_HUB_USERNAME}}/DOCKER_HUB_USERNAME:buildcache,mode=max
